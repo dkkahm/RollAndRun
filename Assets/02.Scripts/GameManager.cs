@@ -29,6 +29,8 @@ public class GameManager : MonoBehaviour {
     public RectTransform m_touch_pad_tr;
     public RectTransform m_touch_bar_rect_tr;
 
+    public GameObject m_retry_dialog;
+
     private const float MOVE_TARGET_FACTOR = 100f;
     private const float MOVE_TARGET_SPEED = 3f;
     private const float DISTANCE_TO_DESTROY_TITLE = 4f;
@@ -54,7 +56,6 @@ public class GameManager : MonoBehaviour {
     private int m_player_hp = 10;
 
     private bool m_is_touch_pad_pressed = false;
-    private Vector3 m_touch_pad_pressed_pos;
     private Vector3[] m_touch_pad_position = new Vector3[4];
 
     private float TOUCH_BAR_PIXEL_LEFT = 0.0f;
@@ -68,7 +69,7 @@ public class GameManager : MonoBehaviour {
     private float m_touch_pad_value = 0f;
 
     // Use this for initialization
-    void Start () {
+    void Start() {
         m_target_tr = GameObject.FindGameObjectWithTag("TARGET").GetComponent<Transform>();
         m_camera_tr = Camera.main.GetComponent<Transform>();
 
@@ -93,21 +94,23 @@ public class GameManager : MonoBehaviour {
         // Debug.Log(m_touch_pad_position[1]);
         // Debug.Log(m_touch_pad_position[2]);
         // Debug.Log(m_touch_pad_position[3]);
-        Debug.Log(TOUCH_BAR_PIXEL_WIDTH);
+        //Debug.Log(TOUCH_BAR_PIXEL_WIDTH);
 
         float touch_bar_width = m_touch_bar_rect_tr.sizeDelta.x;
-        Debug.Log(touch_bar_width);
+        //Debug.Log(touch_bar_width);
 
         TOUCH_PAD_ANCHORED_CENTER = m_touch_pad_tr.anchoredPosition.x;
         TOUCH_PAD_ANCHORED_LEFT = TOUCH_PAD_ANCHORED_CENTER - touch_bar_width * 0.5f;
-        Debug.Log(TOUCH_PAD_ANCHORED_LEFT);
+        //Debug.Log(TOUCH_PAD_ANCHORED_LEFT);
         TOUCH_PAD_ANCHORED_RIGHT = TOUCH_PAD_ANCHORED_CENTER + touch_bar_width * 0.5f;
-        Debug.Log(TOUCH_PAD_ANCHORED_RIGHT);
+        //Debug.Log(TOUCH_PAD_ANCHORED_RIGHT);
+
+        m_retry_dialog.SetActive(false);
     }
 
     // Update is called once per frame
-    void Update () {
-        if(m_is_touch_pad_pressed)
+    void Update() {
+        if (m_is_touch_pad_pressed)
         {
             float touch_pad_pos = Mathf.Clamp(Input.mousePosition.x, TOUCH_BAR_PIXEL_LEFT, TOUCH_BAR_PIXEL_RIGHT);
             touch_pad_pos -= TOUCH_BAR_PIXEL_LEFT;
@@ -143,12 +146,12 @@ public class GameManager : MonoBehaviour {
 
         List<GameObject> to_detroy_titles = new List<GameObject>();
 
-        foreach(GameObject tile in m_tiles)
+        foreach (GameObject tile in m_tiles)
         {
             // Debug.Log(tile.transform.position.z);
 
             float distance_tile_to_target = m_target_tr.position.z - tile.transform.position.z;
-            if(distance_tile_to_target >= DISTANCE_TO_DESTROY_TITLE)
+            if (distance_tile_to_target >= DISTANCE_TO_DESTROY_TITLE)
             {
                 to_detroy_titles.Add(tile);
             }
@@ -158,7 +161,7 @@ public class GameManager : MonoBehaviour {
             }
         }
 
-        foreach(GameObject to_destroy_tile in to_detroy_titles)
+        foreach (GameObject to_destroy_tile in to_detroy_titles)
         {
             m_tiles.Remove(to_destroy_tile);
             Destroy(to_destroy_tile);
@@ -171,7 +174,7 @@ public class GameManager : MonoBehaviour {
 
             int obstacle_count = Random.Range(1, MAX_OBSTACLE_COUNT + 1);
             HashSet<float> obstacle_xs = new HashSet<float>();
-            while(obstacle_xs.Count < obstacle_count)
+            while (obstacle_xs.Count < obstacle_count)
             {
                 float x = obstacle_x_positions[Random.Range(0, obstacle_x_positions.Length)];
                 if (obstacle_xs.Contains(x)) continue;
@@ -187,6 +190,14 @@ public class GameManager : MonoBehaviour {
         }
 
         m_score_text.text = string.Format("{0:F01}", m_player_tr.position.z);
+
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            if (Input.GetKey(KeyCode.Escape))
+            {
+                Application.Quit();
+            }
+        }
     }
 
     void MovePlayer(float h)
@@ -242,28 +253,33 @@ public class GameManager : MonoBehaviour {
         if (m_player_hp == 0)
         {
             m_gs = GameState.DEAD;
+            ShowRetryDialog();
         }
     }
 
     public void Dead()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        ShowRetryDialog();
     }
 
     public void OnTouchPadPressed()
     {
+        // Debug.Log("OnTouchPadPressed");
+
         m_is_touch_pad_pressed = true;
-        m_touch_pad_pressed_pos = Input.mousePosition;
+        
     }
 
     public void OnTouchPadReleased()
     {
+        // Debug.Log("OnTouchPadReleased");
+
         m_is_touch_pad_pressed = false;
     }
 
     float GetHorizontalAxis()
     {
-        if(m_is_touch_pad_pressed)
+        if (m_is_touch_pad_pressed)
         {
             return m_touch_pad_value;
         }
@@ -271,6 +287,21 @@ public class GameManager : MonoBehaviour {
         {
             return Input.GetAxis("Horizontal");
         }
+    }
+
+    void ShowRetryDialog()
+    {
+        m_retry_dialog.SetActive(true);
+    }
+
+    public void RetryGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void ExitGame()
+    {
+        Application.Quit();
     }
 
     private static GameManager s_instance;
