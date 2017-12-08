@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - CAMERA_TARGET
+  - OBSTACLE
+  - TARGET
+  - DEAD_ZONE
   layers:
   - Default
   - TransparentFX
